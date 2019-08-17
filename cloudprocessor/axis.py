@@ -79,7 +79,7 @@ class Axis:
         return((self.min < value) & (value < self.max))
     
     
-    def __index__(self, value: float):
+    def __ix__(self, value: float):
         """Returns index of cell that contains input, if any, else None."""
         ix = np.where(np.logical_and(
             self.min_bounds.__le__(float(value)),     # Value less than x.

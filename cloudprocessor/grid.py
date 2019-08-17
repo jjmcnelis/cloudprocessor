@@ -45,10 +45,12 @@ class Grid:
             #self.y.mid_points, 
             #self.z.mid_points))
 
-    # def __index__(self, cloud: float):
+    # def __index__(self, cloud):
     #     """Returns index of cell that contains input, if any, else None."""
-    #     ix = np.where(np.logical_and(
-    #         self.min_bounds.__le__(float(value)),     # Value less than x.
-    #         self.max_bounds.__gt__(float(value))))[0] # Value greater than x.
+    #     ix = np.where(np.logical_and(*[
+    #         cloud[ax] for ax in ["x", "y", "z"]
+    #         #self.min_bounds.__le__(float(value)), # Value less than x.
+    #         #self.max_bounds.__gt__(float(value))  # Value greater than x.
+    #     ]))[0]
     #     ix = None if len(ix) is 0 else ix[0]
     #     return(ix)
