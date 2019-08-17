@@ -1,7 +1,6 @@
 import dask.dataframe as dd
 import numpy as np
 
-
 def _read_dask_df(file: str, options: dict={"sep": " ", "names" :None}):
     """Parse XYZ cloud to dask data frame."""
     try:
@@ -52,12 +51,8 @@ class Cloud:
     
     ### Class instantiation. 
     
-    def __init__(self, 
-                 files: list=[], 
-                 merge: bool=False, 
-                 transform: list=None):
+    def __init__(self, files: list=[], merge: bool=False):
         """Takes as input a list of paths to point clouds."""
-        # ADD LOGIC TO -----------> # Update the transformation matrix.
         for f in files:             # Iterate over input point cloud files.
             merge = True if (len(files) <= 1) else merge
             self.__add__(f, merge)  # Add cloud to class.
@@ -66,8 +61,8 @@ class Cloud:
     ### Class methods: point clouds. 
             
     def __add__(self, file: str, merge: bool=False):
-        """Parse XYZ cloud, apply transform, and append to class cloud."""
         self.clouds[file] = _read_dask_df(file)
+        # ADD LOGIC TO TRANSFORM IF MATRIX ISNT DEFAULT
         if merge:
             self.merged = _merge_dask_df(self.clouds[file], self.merged)
 
@@ -77,7 +72,7 @@ class Cloud:
     def __compute__(self):
         self.merged = self.merged.compute()    # Compute dask queue.
 
-    
+
     ### Class methods: transformation. 
     
     def __index__(self, axis: str):

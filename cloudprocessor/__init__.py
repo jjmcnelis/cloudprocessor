@@ -19,6 +19,18 @@ computing gridded statistics over point clouds. Built on NumPy and Dask.
 author: jack mcnelis
 email:  jjmcnelis@outlook.com
 '''
+
+import numpy as np
+import decimal
 from .axis import Axis
 from .grid import Grid
 from .cloud import Cloud
+
+
+# disallow scientific notation when printing
+np.set_printoptions(suppress=True)
+
+
+# Function to get the precision of user inputs.
+def _get_precision(x: float):
+    return abs(decimal.Decimal(str(x)).as_tuple().exponent)

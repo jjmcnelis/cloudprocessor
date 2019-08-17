@@ -1,14 +1,4 @@
 import numpy as np
-import decimal
-
-
-# disallow scientific notation when printing
-np.set_printoptions(suppress=True)
-
-
-def _get_precision(x: float):
-    return abs(decimal.Decimal(str(x)).as_tuple().exponent)
-
 
 def _safe_arange(start, stop, step):
     return step * np.arange(start / step, stop / step)
@@ -59,6 +49,7 @@ class Axis:
         :type res: float.
 
         """
+
         # Axis properties.
         self.name = name
         self.min  = float(min)
