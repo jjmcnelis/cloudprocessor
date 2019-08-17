@@ -1,0 +1,7 @@
+name: ptcloud
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - numpy
+  - pandas
