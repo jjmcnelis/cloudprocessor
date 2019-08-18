@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def _permute_arrays(arrays):
     """Generate an array of voxel centroids from three dimensional arrays."""  
     arrays = [np.asarray(x) for x in arrays]  # Ensure all inputs are arrays.
@@ -16,41 +17,67 @@ def _permute_arrays(arrays):
 
 class Grid:
     """Initializes a grid for one or more axes."""
-    ref   = {}
-    shape = []
     size  = 1
-   
+    axes  = {}
+    grid  = None
+    index = None
+    shape = []
+
     def __init__(self, *axes):    
-        for ax in axes:                        # Initialize input axes.
-            self.__add__(ax)
+        for ax in axes:                        # Iterate over input axes.
+            self.__add__(ax)                   # Add to grid.
         self.__grid__()                        # Permute axes arrays.  
-        #self.x, self.y, self.z = x, y, z      # Initialize input axes.
-        #self.size  = x.size*y.size*z.size     # Get total size of grid. 
-        #self.shape = (x.size, y.size, z.size) # Get shape of grid.
+        self.__build__()                       # Permute axes indices.  
 
     def __add__(self, axis, grid: bool=False):
         """Add a new axis to the class."""
-        setattr(self, axis.name, axis)         # Get total size of grid. 
-        self.ref[axis.name] = axis             # Get total size of grid.    
-        if grid:
-            self.__grid__()                    # Permute axes arrays. 
+        setattr(self, axis.name, axis)         # Add axis to class attributes.
+        self.axes[axis.name] = axis            # Add axis to reference dict.
+        self.shape.append(axis.size)           # Append size to shape.
+        if grid: self.__grid__()               # Permute axes if grid is True.
 
     def __grid__(self):
         """Wrapper for _permute_arrays."""
-        axes = (ax.mid_points for ax in self.ref.values())
-        self.grid = _permute_arrays(axes)
-        self.size  = self.grid.size        # Update total size of grid.
-        self.shape = self.grid.size        # Update shape of grid.  
-            #self.x.mid_points, 
-            #self.y.mid_points, 
-            #self.z.mid_points))
+        ax = (ax.mid_points for ax in self.axes.values())
+        self.grid = _permute_arrays(ax)        # Permute axis coordinates.
+        self.size = self.grid.size             # Update total size of grid.
 
-    # def __index__(self, cloud):
-    #     """Returns index of cell that contains input, if any, else None."""
-    #     ix = np.where(np.logical_and(*[
-    #         cloud[ax] for ax in ["x", "y", "z"]
-    #         #self.min_bounds.__le__(float(value)), # Value less than x.
-    #         #self.max_bounds.__gt__(float(value))  # Value greater than x.
-    #     ]))[0]
-    #     ix = None if len(ix) is 0 else ix[0]
-    #     return(ix)
+    def __build__(self):
+        """ """
+        ix = (range(ax.size) for ax in self.axes.values())
+        self.index = _permute_arrays(ix).T     # Permute axis index.
+
+    def Statistic(self, Indexer):
+        """Builds indexer table of x, y, z indexes. Stats cols go here."""
+
+        # Make a function that with xyz array as input and output.
+        def calc(xyz):
+            points = Indexer(xyz[0], xyz[1], xyz[2])
+            result = np.array([  
+                points.x.mean(skipna=True),
+                points.y.mean(skipna=True),
+                points.z.mean(skipna=True) ])
+            return(result)
+
+        # Vectorize the function.
+        vfunc = np.vectorize(calc)
+
+        result = vfunc(self.index.T)
+
+        return(result)
+
+
+
+
+
+
+
+
+
+
+    #def __stat__(self, cloud):
+    #    """ """
+    #    idx = (range(ax.size) for ax in self.axes.values())
+    #    self.index = _permute_arrays(idx)  # Permute axis index.
+
+

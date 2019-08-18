@@ -16,5 +16,4 @@ computing gridded statistics over point clouds. Built on NumPy and Dask.
   - All cloud operations are reduced to their equivalent over the cloud(s) 
     independent axes, so any number of operations can be applied to each.
 
-author: jack mcnelis
-email:  jjmcnelis@outlook.com
+author: jack mcnelis   |   email:  jjmcnelis@outlook.com

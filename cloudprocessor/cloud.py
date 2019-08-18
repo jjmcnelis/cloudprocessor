@@ -29,35 +29,38 @@ def _merge_dask_df(df_to_merge, merge_to_df=None):
         
         # Finally, if no exceptions, return merged df.
         finally:               
-            return df          
+            return df    
+
+
+def _compute_dask_df_bnds(merged):
+    xbnds = merged.x.min().compute(), merged.x.max().compute()
+    ybnds = merged.y.min().compute(), merged.y.max().compute()
+    zbnds = merged.z.min().compute(), merged.z.max().compute()
+    return(xbnds, ybnds, zbnds)    
 
     
 class Cloud:
     """ """   
     
-    ### Initialize empty cloud as a dask dataframe. 
-    
-    merged = None
+    ### Initialize Cloud attributes.
     clouds = {}
+    merged = None
     
     ### Defaults: 3D scale and transformation matrix. 
-    
-    scale =  [1.0, 1.0, 1.0]    # Cloud scale       (x=1, y=1, z=1).
-    trans =  [0.0, 0.0, 0.0]    # Cloud translation (None).
-    rotat = [[1.0, 0.0, 0.0],   # Cloud rotation    (None).
+    scale =  [1.0, 1.0, 1.0]        # Cloud scale       (x=1, y=1, z=1).
+    trans =  [0.0, 0.0, 0.0]        # Cloud translation (None).
+    rotat = [[1.0, 0.0, 0.0],       # Cloud rotation    (None).
              [0.0, 1.0, 0.0],
              [0.0, 0.0, 1.0]]
     
-    
     ### Class instantiation. 
-    
+
     def __init__(self, files: list=[], merge: bool=False):
         """Takes as input a list of paths to point clouds."""
         for f in files:             # Iterate over input point cloud files.
             merge = True if (len(files) <= 1) else merge
             self.__add__(f, merge)  # Add cloud to class.
     
-
     ### Class methods: point clouds. 
             
     def __add__(self, file: str, merge: bool=False):
@@ -65,43 +68,65 @@ class Cloud:
         # ADD LOGIC TO TRANSFORM IF MATRIX ISNT DEFAULT
         if merge:
             self.merged = _merge_dask_df(self.clouds[file], self.merged)
+            self.__bounds__()
 
     def __merge__(self):
         self.merged = _merge_dask_df(list(self.clouds.values()), None)
+        self.__bounds__()
 
-    def __compute__(self):
-        self.merged = self.merged.compute()    # Compute dask queue.
+    def __bounds__(self):
+        xbnds, ybnds, zbnds  = _compute_dask_df_bnds(self.merged)
+        self.xmin, self.xmax = xbnds
+        self.ymin, self.ymax = ybnds
+        self.zmin, self.zmax = zbnds
+
+    def Index(self, xax=None, yax=None, zax=None):
+        """Get per-axis arrays of cells containing each point in cloud."""
+        self.merged["xi"] = self.merged.x.apply(xax.__ix__)
+        self.merged["yi"] = self.merged.y.apply(yax.__ix__)
+        self.merged["zi"] = self.merged.z.apply(zax.__ix__)
+        self.merged = self.merged.compute()
+
+        # Create and return decorated function to index cloud.
+        def indexer(xi, yi, zi):
+            return(self.merged.loc[ 
+                (self.merged.xi == xi) & 
+                (self.merged.yi == yi) &
+                (self.merged.zi == zi) ])
+        
+        return(indexer)
 
 
     ### Class methods: transformation. 
     
-    def __index__(self, axis: str):
+    def __axis__(self, axis: str):
         """Returns the index of the axis name."""
-        return {"x": 0, "y": 1, "z": 2}[axis] # Return the axis number.                           
+        return {"x": 0, "y": 1, "z": 2}[axis]  # Return the axis number.                           
 
     def __scale__(self, axis: str, value: float):
         """Scale point cloud along input axis."""
-        axix = self.__index__(axis)           # Get the axis number
-        self.scale[axix] = value              # Replace scale matrix value.
-        print("...")                          # Translate cloud.       
+        axix = self.__axis__(axis)            # Get the axis number
+        self.scale[axix] = value               # Replace scale matrix value.
+        print("...")                           # Translate cloud.       
         
     def __translate__(self, axis: str, value: float):
         """Positive or negative shift (translation) along input axis."""
-        axix = self.__index__(axis)           # Get the axis number
-        self.trans[axix] = value              # Replace translate matrix val.
-        print("...")                          # Translate cloud.
+        axix = self.__axis__(axis)            # Get the axis number
+        self.trans[axix] = value               # Replace translate matrix val.
+        print("...")                           # Translate cloud.
         
     def __rotate__(self, axis: str, matrix: list):
         """Rotate point cloud along input axis."""        
-        axix = self.__index__(axis)           # Get the axis number.
-        self.rotat[axix] = matrix             # Replace rotation matrix row.
-        print("...")                          # Rotate cloud.    
+        axix = self.__axis__(axis)            # Get the axis number.
+        self.rotat[axix] = matrix              # Replace rotation matrix row.
+        print("...")                           # Rotate cloud.    
 
     def __matrix__(self, axis=None):
         """Returns transformation array for an axis or whole matrix."""    
-        if axis is None:                      # If no axis given,
-            return self.rotat + [self.trans]  # Merge and return matrix.
-        else:                                 # Else if axis given,
-            axix   = self.__index__(axis)     # Get the axis number.
-            rotat = self.rotat[axix]          # Get the rotation matrix.
-            return rotat + [self.trans[axix]] # Append the translation value.
+        if axis is None:                       # If no axis given,
+            return self.rotat + [self.trans]   # Merge and return matrix.
+        else:                                  # Else if axis given,
+            axix   = self.__axis__(axis)      # Get the axis number.
+            rotat = self.rotat[axix]           # Get the rotation matrix.
+            return rotat + [self.trans[axix]]  # Append the translation value.
+
